@@ -26,6 +26,14 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
             options: MapOptions(
               initialCenter: initialCenter,
               initialZoom: 12.0,
+              // cameraConstraint: CameraConstraint.contain(
+              //   bounds: LatLngBounds(
+              //     //* southwest
+              //     const LatLng(30.46646180488818, 31.185331542026894),
+              //     //* northeast
+              //     const LatLng(31.41770515009543, 31.81450591571051),
+              //   ),
+              // ),
             ),
             children: [
               TileLayer(

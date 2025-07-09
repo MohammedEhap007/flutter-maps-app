@@ -22,7 +22,6 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
   final Location location = Location();
   final TextEditingController locationController = TextEditingController();
   bool isLoading = true;
-  late LatLng initialCenter;
   LatLng? currentLocation;
   LatLng? destinationLocation;
   List<LatLng> routeCoordinates = [];
@@ -45,41 +44,107 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              initialCenter:
-                  currentLocation ??
-                  const LatLng(31.04089246932112, 31.37851020856105),
-              initialZoom: 12.0,
-              minZoom: 3,
-              maxZoom: 20,
-              // cameraConstraint: CameraConstraint.contain(
-              //   bounds: LatLngBounds(
-              //     //* southwest
-              //     const LatLng(30.46646180488818, 31.185331542026894),
-              //     //* northeast
-              //     const LatLng(31.41770515009543, 31.81450591571051),
-              //   ),
-              // ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.app',
-              ),
-              const CurrentLocationLayer(
-                style: LocationMarkerStyle(
-                  marker: DefaultLocationMarker(
-                    child: Icon(Icons.location_pin, color: Colors.white),
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    initialCenter: currentLocation!,
+                    initialZoom: 12.0,
+                    minZoom: 3,
+                    maxZoom: 20,
+                    // cameraConstraint: CameraConstraint.contain(
+                    //   bounds: LatLngBounds(
+                    //     //* southwest
+                    //     const LatLng(30.46646180488818, 31.185331542026894),
+                    //     //* northeast
+                    //     const LatLng(31.41770515009543, 31.81450591571051),
+                    //   ),
+                    // ),
                   ),
-                  markerSize: Size(35, 35),
-                  markerDirection: MarkerDirection.heading,
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.app',
+                    ),
+                    const CurrentLocationLayer(
+                      style: LocationMarkerStyle(
+                        marker: DefaultLocationMarker(
+                          child: Icon(Icons.location_pin, color: Colors.white),
+                        ),
+                        markerSize: Size(35, 35),
+                        markerDirection: MarkerDirection.heading,
+                      ),
+                    ),
+                    if (destinationLocation != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            width: 50,
+                            height: 50,
+                            point: destinationLocation!,
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                              size: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (currentLocation != null &&
+                        destinationLocation != null &&
+                        routeCoordinates.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: routeCoordinates,
+                            color: Colors.red,
+                            strokeWidth: 5,
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
+          Positioned(
+            top: 0,
+            right: 0,
+            left: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: locationController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Enter a location',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    style: IconButton.styleFrom(backgroundColor: Colors.white),
+                    onPressed: () {
+                      final location = locationController.text.trim();
+                      if (location.isNotEmpty) {
+                        fetchCoordinatesPoints(location);
+                      }
+                    },
+                    icon: const Icon(Icons.search),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -123,8 +188,8 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (response.body.isNotEmpty) {
-        final lat = data[0]['lat'];
-        final lon = data[0]['lon'];
+        final lat = double.parse(data[0]['lat']);
+        final lon = double.parse(data[0]['lon']);
         setState(() {
           destinationLocation = LatLng(lat, lon);
         });
@@ -147,7 +212,7 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
   Future<void> fetchRouteCoordinates() async {
     if (currentLocation == null || destinationLocation == null) return;
     final url = Uri.parse(
-      'http://router.project-osrm.org/route/v1/driving/${currentLocation!.latitude},${currentLocation!.longitude};${destinationLocation!.latitude},${destinationLocation!.longitude}?overview=full&geometries=polyline',
+      'http://router.project-osrm.org/route/v1/driving/${currentLocation!.longitude},${currentLocation!.latitude};${destinationLocation!.longitude},${destinationLocation!.latitude}?overview=full&geometries=polyline',
     );
     final response = await http.get(url);
 

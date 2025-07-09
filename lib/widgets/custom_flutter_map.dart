@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 
 class CustomFlutterMap extends StatefulWidget {
   const CustomFlutterMap({super.key});
@@ -12,12 +13,17 @@ class CustomFlutterMap extends StatefulWidget {
 
 class _CustomFlutterMapState extends State<CustomFlutterMap> {
   final MapController mapController = MapController();
+  final Location location = Location();
+  final TextEditingController locationController = TextEditingController();
+  bool isLoading = true;
   late LatLng initialCenter;
   LatLng? currentLocation;
+  LatLng? destinationLocation;
+  List<LatLng> routeCoordinates = [];
   @override
   void initState() {
-    initialCenter = const LatLng(31.04089246932112, 31.37851020856105);
     super.initState();
+    initializeLocation();
   }
 
   @override
@@ -36,7 +42,9 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
-              initialCenter: currentLocation ?? initialCenter,
+              initialCenter:
+                  currentLocation ??
+                  const LatLng(31.04089246932112, 31.37851020856105),
               initialZoom: 12.0,
               minZoom: 3,
               maxZoom: 20,
@@ -77,7 +85,7 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
 
   Future<void> moveToUserCurrentLocation() async {
     if (currentLocation != null) {
-      mapController.move(currentLocation!, 15);
+      mapController.moveAndRotate(currentLocation!, 15, 0);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -97,6 +105,40 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
         ),
       );
     }
+  }
+
+  Future<void> initializeLocation() async {
+    if (!await checkLocationPermission()) return;
+
+    location.onLocationChanged.listen((locationData) {
+      if (locationData.altitude != null && locationData.longitude != null) {
+        setState(() {
+          currentLocation = LatLng(
+            locationData.latitude!,
+            locationData.longitude!,
+          );
+          isLoading = false;
+        });
+      }
+    });
+  }
+
+  Future<bool> checkLocationPermission() async {
+    bool serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return false;
+      }
+    }
+    PermissionStatus permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

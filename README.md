@@ -1,16 +1,44 @@
-# flutter_maps_app
+# 🗺️📱 Flutter Maps App
 
-A new Flutter project.
+A Flutter app that displays a map using **OpenStreetMap** with the following features:
 
-## Getting Started
+- 📍 Real-time location tracking
+- 🔍 Search by place name using Nominatim API
+- 📌 Place destination markers
+- 🚗 Draw driving routes between current and searched locations using OSRM
+- 🌐 Fully open-source map and routing stack
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 📸 Screenshots
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+![Group 1](https://github.com/user-attachments/assets/e7b8c151-d00d-4591-9e14-bcd64bab00d6)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+
+
+---
+
+## 🚀 Features
+
+- **OpenStreetMap Integration** via `flutter_map`
+- **User Location Detection** using `location` package
+- **Live Location Marker** using `flutter_map_location_marker`
+- **Search and Geocoding** with [Nominatim API](https://nominatim.org/)
+- **Routing and Polylines** with [OSRM API](http://project-osrm.org/)
+- **Marker Placement** on destination search
+- **Dynamic Polyline Drawing** from current location to destination
+
+---
+
+## 📦 Packages Used
+
+| Package | Purpose |
+|--------|--------|
+| [`flutter_map`](https://pub.dev/packages/flutter_map) | Displaying OpenStreetMap tiles |
+| [`flutter_map_location_marker`](https://pub.dev/packages/flutter_map_location_marker) | Real-time location marker |
+| [`location`](https://pub.dev/packages/location) | Accessing device GPS |
+| [`http`](https://pub.dev/packages/http) | Calling external APIs |
+| [`flutter_polyline_points`](https://pub.dev/packages/flutter_polyline_points) | Decoding route geometry |
+| [`latlong2`](https://pub.dev/packages/latlong2) | Coordinate handling |
+
+---

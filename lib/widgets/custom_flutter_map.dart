@@ -13,6 +13,7 @@ class CustomFlutterMap extends StatefulWidget {
 class _CustomFlutterMapState extends State<CustomFlutterMap> {
   final MapController mapController = MapController();
   late LatLng initialCenter;
+  LatLng? currentLocation;
   @override
   void initState() {
     initialCenter = const LatLng(31.04089246932112, 31.37851020856105);
@@ -35,7 +36,7 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
-              initialCenter: initialCenter,
+              initialCenter: currentLocation ?? initialCenter,
               initialZoom: 12.0,
               minZoom: 3,
               maxZoom: 20,
@@ -66,7 +67,36 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: moveToUserCurrentLocation,
+        backgroundColor: Colors.teal,
+        child: const Icon(Icons.my_location, size: 28, color: Colors.white),
+      ),
     );
+  }
+
+  Future<void> moveToUserCurrentLocation() async {
+    if (currentLocation != null) {
+      mapController.move(currentLocation!, 15);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          content: Container(
+            width: double.infinity,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: const Center(
+              child: Text('Current location is not available'),
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 

@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:flutter_maps_app/widgets/functions/check_location_permission.dart';
+import 'package:flutter_maps_app/widgets/functions/show_error_bar.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 
@@ -87,28 +92,12 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
     if (currentLocation != null) {
       mapController.moveAndRotate(currentLocation!, 15, 0);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          content: Container(
-            width: double.infinity,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: const Center(
-              child: Text('Current location is not available'),
-            ),
-          ),
-        ),
-      );
+      showErrorBar(context, 'Current location is not available');
     }
   }
 
   Future<void> initializeLocation() async {
-    if (!await checkLocationPermission()) return;
+    if (!await checkLocationPermission(location: location)) return;
 
     location.onLocationChanged.listen((locationData) {
       if (locationData.altitude != null && locationData.longitude != null) {
@@ -123,23 +112,37 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
     });
   }
 
-  Future<bool> checkLocationPermission() async {
-    bool serviceEnabled = await location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return false;
+  Future<void> fetchCoordinatesPoints(String location) async {
+    final url = Uri.parse(
+      'https://nominatim.openstreetmap.org/search?q=$location&format=json&limit=1',
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (response.body.isNotEmpty) {
+        final lat = data[0]['lat'];
+        final lon = data[0]['lon'];
+        setState(() {
+          destinationLocation = LatLng(lat, lon);
+        });
+        await fetchRouteCoordinates();
+      } else {
+        if (mounted) {
+          showErrorBar(
+            context,
+            'Location not found. Please try another location',
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        showErrorBar(context, 'Failed to fetch location. Try again later');
       }
     }
-    PermissionStatus permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return false;
-      }
-    }
-    return true;
   }
+
+  Future<void> fetchRouteCoordinates() async {}
 }
 
 // world view 0 -> 3

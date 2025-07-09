@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_maps_app/widgets/functions/check_location_permission.dart';
 import 'package:flutter_maps_app/widgets/functions/show_error_bar.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
@@ -78,6 +79,7 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
               ),
             ],
           ),
+          
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -142,7 +144,35 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
     }
   }
 
-  Future<void> fetchRouteCoordinates() async {}
+  Future<void> fetchRouteCoordinates() async {
+    if (currentLocation == null || destinationLocation == null) return;
+    final url = Uri.parse(
+      'http://router.project-osrm.org/route/v1/driving/${currentLocation!.latitude},${currentLocation!.longitude};${destinationLocation!.latitude},${destinationLocation!.longitude}?overview=full&geometries=polyline',
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final geometry = data['routes'][0]['geometry'];
+      decodePolyline(geometry);
+    } else {
+      if (mounted) {
+        showErrorBar(context, 'Failed to fetch route. Try again later');
+      }
+    }
+  }
+
+  void decodePolyline(String encodedPolyline) {
+    PolylinePoints polylinePoints = PolylinePoints();
+    List<PointLatLng> decodedPolylinePoints = polylinePoints.decodePolyline(
+      encodedPolyline,
+    );
+    setState(() {
+      routeCoordinates = decodedPolylinePoints
+          .map((point) => LatLng(point.latitude, point.longitude))
+          .toList();
+    });
+  }
 }
 
 // world view 0 -> 3
